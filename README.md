@@ -15,6 +15,9 @@ A lightweight CLI tool to assess password strength, check against common passwor
 - Git
 - Internet connection for API checks
 - `curl` or `wget` for list downloads
+```
+pip install -r requirements.txt
+```
 
 ## 📦 Installation
 1. Clone the repository:
