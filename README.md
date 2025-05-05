@@ -19,5 +19,6 @@ A lightweight CLI tool to assess password strength, check against common passwor
 ## 📦 Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourname/passpulse.git
-   cd passpulse
+   git clone https://github.com/anonymmized/PassPulse
+   cd PassPulse
+   ```
