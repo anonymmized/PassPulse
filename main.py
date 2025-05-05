@@ -65,9 +65,9 @@ def analyze_password(password, common_passwords):
 
     print('[+] Проверка по списку распространенных паролей...')
     is_common = check_common_password(password, common_passwords)
-    print(f'[-] В списке распространенных: {'Да' if is_common else 'Нет'}')
+    print(f"[-] В списке распространенных: {'Да' if is_common else 'Нет'}")
 
-    print('[+] Проверка на утечки...')
+    print('[+] Проверка на утечки...') 
     pwned = check_pwned_password(password)
     print(f"[-] {check_pwned_password(password)}")
 
