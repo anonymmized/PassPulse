@@ -29,13 +29,13 @@ A lightweight CLI tool to assess password strength, check against common passwor
     ```
 
 3. Download password lists:
-    ```bash
+    ```
     chmod +x download_lists.sh
     ./download_lists.sh
     ```
 
 ## ▶️ Usage
-    ```bash
+    ```
     python3 main.py
     ```
 
@@ -47,7 +47,7 @@ You'll be prompted to enter a password for analysis. The tool will:
 - Show detailed security report
 
 ## 📊 Example Output
-    ```bash
+    ```
     [+] Checking password: '123456789'
     [-] Strength: Weak (9 characters)
     [-] Found in local lists: Yes (rockyou.txt)
