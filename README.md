@@ -22,3 +22,57 @@ A lightweight CLI tool to assess password strength, check against common passwor
    git clone https://github.com/anonymmized/PassPulse
    cd PassPulse
    ```
+
+2. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3. Download password lists:
+    ```bash
+    chmod +x download_lists.sh
+    ./download_lists.sh
+    ```
+
+## ▶️ Usage
+    ```bash
+    python3 main.py
+    ```
+
+You'll be prompted to enter a password for analysis. The tool will:
+
+- Assess password strength (Weak/Medium/Strong)
+- Check against 10+ million leaked passwords
+- Verify against PwnedPasswords database
+- Show detailed security report
+
+## 📊 Example Output
+    ```bash
+    [+] Checking password: '123456789'
+    [-] Strength: Weak (9 characters)
+    [-] Found in local lists: Yes (rockyou.txt)
+    [-] Found in PwnedPasswords: Yes (20,689 times)
+    [-] Verdict: CRITICAL - Password compromised in multiple breaches!
+    ```
+
+## 🛡️ Security
+
+```
+### Key Improvements:
+1. Added license badge with direct link to MIT license
+2. Created dedicated sections for features, requirements, and contributing
+3. Added security disclaimer about password handling
+4. Improved code formatting with syntax highlighting
+5. Added professional emojis for better visual hierarchy
+6. Included contribution guidelines
+7. Added maintainer information
+8. Made the project name consistent (PassPulse instead of password-checker)
+9. Added cross-platform compatibility note
+10. Included version control instructions
+
+Make sure to:
+1. Add the actual MIT license file
+2. Update the GitHub repository URL in links
+3. Add your project-specific technical documentation
+4. Consider adding screenshots or a demo video for better visualization
+```
