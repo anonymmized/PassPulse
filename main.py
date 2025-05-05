@@ -1,10 +1,21 @@
 import re
 import os
 import sys
+import click
 import hashlib
 import requests
+import argparse
 
 COMMON_PASSWORDS_DIR = 'passwords'
+def parse_args():
+    parser = argparse.ArgumentParser(description="Проверка сложности пароля")
+    parser.add_argument('-p', '--password', help='Ручной ввод пароля (небезопасно, пароль сохраняется в истории команд)')
+    parser.add_argument('-f', '--file', help="Пароль читается из файла")
+    parser.add_argument('-l', '--length', action="store_true", help="Проверяется длина пароля")
+    parser.add_argument('-c', '--characters', action='store_true', help='Проверяется количество типов символов')
+    parser.add_argument('-pw', '--pwned', action="store_true", help="Пароль проверяется в api.pwnedpasswords")
+    parser.add_argument('-ld', '--loaded', action="store_true", help="Проверяет загруженные списки паролей")
+    return parser.parse_args()
 
 def check_pwned_password(password):
     sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
@@ -16,7 +27,7 @@ def check_pwned_password(password):
             if suffix in line:
                 count = line.split(':')[1]
                 return f"Пароль найден в утечках ({count} раз)"
-    return 'Без утечек'
+    return 0
 
 def load_passwords():
     passwords = set()
@@ -84,11 +95,48 @@ def analyze_password(password, common_passwords):
     return final_score
 
 if __name__ == '__main__':
+    args = parse_args()
+
+    if args.loaded:
+        os.system('ls passwords')
+        print('\n')
+        print('='*50)
+
     if not os.path.exists(COMMON_PASSWORDS_DIR) or not os.listdir(COMMON_PASSWORDS_DIR):
         print("[!] Списки паролей не найдены.")
         print("[*] Запустите './download_lists.sh' для загрузки.")
         sys.exit(1)
-    
+
+    if args.file:
+        try:
+            with open(args.file, 'r') as f:
+                password = f.read().strip()
+        except Exception as e:
+            print(f"[!] Ошибка чтения файла: {e}")
+            sys.exit(1)
+    elif args.password:
+        password = args.password
+    else:
+        password = click.prompt('Введите пароль для проверки', hide_input=True, confirmation_prompt=False)
+
+    run_length_check = args.length
+    run_char_check = args.characters
+    run_pwned_check = args.pwned
+    if run_char_check or run_length_check or run_pwned_check:
+        if run_char_check:
+            characters_result = check_characters(password)
+            print(f"[+] Проверка символов: {characters_result}/4")
+
+        if run_length_check:
+            length_result = check_length(password)
+            print(f"[+] Проверка длины: {len(password)} символов → {length_result}")
+        
+        if run_pwned_check:
+            pwned_result = check_pwned_password(password)
+            if pwned_result == 0:
+                print(f"[+] Без утечек")
+            else:
+                print(f"[+] {pwned_result}")
+        sys.exit(0)
     common_passwords = load_passwords()
-    password = input('Введите пароль для проверки: ')
     analyze_password(password, common_passwords)
