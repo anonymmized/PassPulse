@@ -36,9 +36,7 @@ A lightweight CLI tool to assess password strength, check against common passwor
 
 ## ▶️ Usage
 
-    ```bash
     python3 main.py
-    ```
 
 You'll be prompted to enter a password for analysis. The tool will:
 
@@ -49,13 +47,13 @@ You'll be prompted to enter a password for analysis. The tool will:
 
 ## 📊 Example Output
 
-    ```bash
+
     [+] Checking password: '123456789'
     [-] Strength: Weak (9 characters)
     [-] Found in local lists: Yes (rockyou.txt)
     [-] Found in PwnedPasswords: Yes (20,689 times)
     [-] Verdict: CRITICAL - Password compromised in multiple breaches!
-    ```
+
 
 ## 🛡️ Security
 
