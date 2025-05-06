@@ -7,6 +7,8 @@ import requests
 import argparse
 
 COMMON_PASSWORDS_DIR = 'passwords'
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Проверка сложности пароля")
     parser.add_argument('-p', '--password', help='Ручной ввод пароля (небезопасно, пароль сохраняется в истории команд)')
@@ -15,6 +17,8 @@ def parse_args():
     parser.add_argument('-c', '--characters', action='store_true', help='Проверяется количество типов символов')
     parser.add_argument('-pw', '--pwned', action="store_true", help="Пароль проверяется в api.pwnedpasswords")
     parser.add_argument('-ld', '--loaded', action="store_true", help="Проверяет загруженные списки паролей")
+    parser.add_argument('-cp', '--cmnpassword', action='store_true', help="Проверяет наличие пароля в списке паролей")
+    parser.add_argument('-af', '--addfile', help='Добавить список паролей из файла, который обязательно должен находиться в директории "password"')
     return parser.parse_args()
 
 def check_pwned_password(password):
@@ -43,6 +47,18 @@ def load_passwords():
             except Exception as e:
                 print(f"Ошибка чтения файла {filename}: {e}")
     print(f"[+] Загружено {len(passwords)} уникальных паролей из списков")
+    return passwords
+
+def load_passwords_from_file(filename):
+    passwords = set()
+    filepath = os.path.join(COMMON_PASSWORDS_DIR, filename)
+    if os.path.isfile(filepath):
+        try:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                passwords.update(line.strip() for line in f if line.strip())
+        except Exception as e:
+            print(f"Ошибка чтения файла {filename}: {e}")
+    print(f"[*] Загружено {len(passwords)} уникальных паролей")
     return passwords
 
 def check_length(password):
@@ -119,6 +135,8 @@ if __name__ == '__main__':
     else:
         password = click.prompt('Введите пароль для проверки', hide_input=True, confirmation_prompt=False)
 
+    
+
     run_length_check = args.length
     run_char_check = args.characters
     run_pwned_check = args.pwned
@@ -138,5 +156,10 @@ if __name__ == '__main__':
             else:
                 print(f"[+] {pwned_result}")
         sys.exit(0)
-    common_passwords = load_passwords()
-    analyze_password(password, common_passwords)
+    
+    if args.addfile:
+        common_passwords = load_passwords_from_file(args.addfile)
+        analyze_password(password, common_passwords)
+    else:
+        common_passwords = load_passwords()
+        analyze_password(password, common_passwords)
