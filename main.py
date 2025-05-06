@@ -1,126 +1,40 @@
-import re
 import os
 import sys
 import click
-import hashlib
-import requests
 import argparse
+# Добавьте путь к папке core вручную
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'core')))
 
-COMMON_PASSWORDS_DIR = 'passwords'
+# Теперь импорты работают правильно
+from core.checks import check_length, check_characters, check_common_password, check_pwned_password, analyze_password
+from core.utils import load_passwords, export_json, export_csv
 
+COMMON_PASSWORDS_DIR = "data/passwords"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Проверка сложности пароля")
-    parser.add_argument('-p', '--password', help='Ручной ввод пароля (небезопасно, пароль сохраняется в истории команд)')
+    parser.add_argument('-p', '--password', help='Ручной ввод пароля')
     parser.add_argument('-f', '--file', help="Пароль читается из файла")
-    parser.add_argument('-l', '--length', action="store_true", help="Проверяется длина пароля")
-    parser.add_argument('-c', '--characters', action='store_true', help='Проверяется количество типов символов')
-    parser.add_argument('-pw', '--pwned', action="store_true", help="Пароль проверяется в api.pwnedpasswords")
-    parser.add_argument('-ld', '--loaded', action="store_true", help="Проверяет загруженные списки паролей")
-    parser.add_argument('-cp', '--cmnpassword', action='store_true', help="Проверяет наличие пароля в списке паролей")
-    parser.add_argument('-af', '--addfile', help='Добавить список паролей из файла, который обязательно должен находиться в директории "password"')
+    parser.add_argument('-l', '--length', action="store_true", help="Проверка длины")
+    parser.add_argument('-c', '--characters', action='store_true', help='Проверка типов символов')
+    parser.add_argument('-pw', '--pwned', action="store_true", help="Проверка через HIBP API")
+    parser.add_argument('-ld', '--loaded', action="store_true", help="Список загруженных файлов")
+    parser.add_argument('-cp', '--cmnpassword', action='store_true', help="Проверка по списку паролей")
+    parser.add_argument('-af', '--addfile', help='Добавить список из файла')
+    parser.add_argument('-ej', '--exportjson', action="store_true", help='Экспорт в JSON')
+    parser.add_argument('-ecsv', '--exportcsv', action="store_true", help="Экспорт в CSV")
     return parser.parse_args()
-
-def check_pwned_password(password):
-    sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
-    prefix, suffix = sha1_hash[:5], sha1_hash[5:]
-    url = f"https://api.pwnedpasswords.com/range/{prefix}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        for line in response.text.splitlines():
-            if suffix in line:
-                count = line.split(':')[1]
-                return f"Пароль найден в утечках ({count} раз)"
-    return 0
-
-def load_passwords():
-    passwords = set()
-    if not os.path.exists(COMMON_PASSWORDS_DIR):
-        print(f"[!] Каталог {COMMON_PASSWORDS_DIR} не найден")
-        return passwords
-    for filename in os.listdir(COMMON_PASSWORDS_DIR):
-        filepath = os.path.join(COMMON_PASSWORDS_DIR, filename)
-        if os.path.isfile(filepath):
-            try:
-                with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-                    passwords.update(line.strip() for line in f if line.strip())
-            except Exception as e:
-                print(f"Ошибка чтения файла {filename}: {e}")
-    print(f"[+] Загружено {len(passwords)} уникальных паролей из списков")
-    return passwords
-
-def load_passwords_from_file(filename):
-    passwords = set()
-    filepath = os.path.join(COMMON_PASSWORDS_DIR, filename)
-    if os.path.isfile(filepath):
-        try:
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                passwords.update(line.strip() for line in f if line.strip())
-        except Exception as e:
-            print(f"Ошибка чтения файла {filename}: {e}")
-    print(f"[*] Загружено {len(passwords)} уникальных паролей")
-    return passwords
-
-def check_length(password):
-    length = len(password)
-    if length < 8:
-        return "Слабый"
-    elif 8 <= length <= 12:
-        return 'Средний'
-    elif length > 12:
-        return 'Сильный'
-    
-def check_characters(password):
-    has_upper = bool(re.search(r"[A-Z]", password))
-    has_lower = bool(re.search(r"[a-z]", password))
-    has_digit = bool(re.search(r'\d', password))
-    has_special = bool(re.search(r'!@#$%^&*(),.?\":{}|<>', password))
-    score = sum([has_digit, has_lower, has_special, has_upper])
-    return score
-
-def check_common_password(password, common_passwords):
-    return password in common_passwords
-
-def analyze_password(password, common_passwords):
-    print('[+] Проверка длины...')
-    length_result = check_length(password)
-    print(f"[-] Длина: {len(password)} символов -> {length_result}")
-
-    print('[+] Проверка символов...')
-    characters_result = check_characters(password)
-    print(f'[-] Количество типов символов: {characters_result}/4')
-
-    print('[+] Проверка по списку распространенных паролей...')
-    is_common = check_common_password(password, common_passwords)
-    print(f"[-] В списке распространенных: {'Да' if is_common else 'Нет'}")
-
-    print('[+] Проверка на утечки...') 
-    pwned = check_pwned_password(password)
-    print(f"[-] {check_pwned_password(password)}")
-
-    final_score = length_result
-    if is_common:
-        final_score = 'Слабый (находится в списке распространенных паролей)'
-    elif length_result == 'Слабый' or characters_result < 2:
-        final_score = 'Слабый'
-    elif length_result == 'Средний' and characters_result >= 3:
-        final_score = "Средний"
-    elif length_result == 'Сильный' and characters_result >= 4:
-        final_score = 'Сильный'
-    print(f"\n[+] Итоговая оценка: {final_score}")
-    return final_score
 
 if __name__ == '__main__':
     args = parse_args()
 
     if args.loaded:
-        os.system('ls passwords')
-        print('\n')
-        print('='*50)
+        os.system(f'ls {COMMON_PASSWORDS_DIR}')
+        print('\n' + '='*50)
 
     if not os.path.exists(COMMON_PASSWORDS_DIR) or not os.listdir(COMMON_PASSWORDS_DIR):
         print("[!] Списки паролей не найдены.")
-        print("[*] Запустите './download_lists.sh' для загрузки.")
+        print("[*] Запустите './scripts/download_lists.sh'")
         sys.exit(1)
 
     if args.file:
@@ -133,33 +47,33 @@ if __name__ == '__main__':
     elif args.password:
         password = args.password
     else:
-        password = click.prompt('Введите пароль для проверки', hide_input=True, confirmation_prompt=False)
+        password = click.prompt('Введите пароль', hide_input=True)
 
-    
-
+    # Быстрые проверки
     run_length_check = args.length
     run_char_check = args.characters
     run_pwned_check = args.pwned
-    if run_char_check or run_length_check or run_pwned_check:
-        if run_char_check:
-            characters_result = check_characters(password)
-            print(f"[+] Проверка символов: {characters_result}/4")
 
+    if any([run_char_check, run_length_check, run_pwned_check]):
+        if run_char_check:
+            print(f"[+] Проверка символов: {check_characters(password)}/4")
         if run_length_check:
-            length_result = check_length(password)
-            print(f"[+] Проверка длины: {len(password)} символов → {length_result}")
-        
+            print(f"[+] Проверка длины: {len(password)} → {check_length(password)}")
         if run_pwned_check:
             pwned_result = check_pwned_password(password)
-            if pwned_result == 0:
-                print(f"[+] Без утечек")
-            else:
-                print(f"[+] {pwned_result}")
+            print(f"[+] {pwned_result}")
         sys.exit(0)
-    
+
+    # Полная проверка
     if args.addfile:
-        common_passwords = load_passwords_from_file(args.addfile)
-        analyze_password(password, common_passwords)
+        common_passwords = load_passwords(args.addfile)
     else:
         common_passwords = load_passwords()
-        analyze_password(password, common_passwords)
+
+    final_result = analyze_password(password, common_passwords)
+
+    # Экспорт
+    if args.exportjson:
+        export_json(password, final_result)
+    elif args.exportcsv:
+        export_csv(password, final_result)
