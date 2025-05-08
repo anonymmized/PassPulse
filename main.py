@@ -2,10 +2,8 @@ import os
 import sys
 import click
 import argparse
-# Добавьте путь к папке core вручную
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'core')))
 
-# Теперь импорты работают правильно
 from core.checks import check_length, check_characters, check_common_password, check_pwned_password, analyze_password
 from core.utils import load_passwords, export_json, export_csv
 
@@ -49,7 +47,6 @@ if __name__ == '__main__':
     else:
         password = click.prompt('Введите пароль', hide_input=True)
 
-    # Быстрые проверки
     run_length_check = args.length
     run_char_check = args.characters
     run_pwned_check = args.pwned
@@ -64,7 +61,6 @@ if __name__ == '__main__':
             print(f"[+] {pwned_result}")
         sys.exit(0)
 
-    # Полная проверка
     if args.addfile:
         common_passwords = load_passwords(args.addfile)
     else:
@@ -72,7 +68,6 @@ if __name__ == '__main__':
 
     final_result = analyze_password(password, common_passwords)
 
-    # Экспорт
     if args.exportjson:
         export_json(password, final_result)
     elif args.exportcsv:
